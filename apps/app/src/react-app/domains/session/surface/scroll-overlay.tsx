@@ -1,4 +1,5 @@
 import { memo, useCallback } from "react";
+import { ArrowDown, ArrowUp } from "lucide-react";
 
 import {
   selectSessionIsStickyBottom,
@@ -17,6 +18,9 @@ type JumpToStartButtonProps = {
   onJumpToStartOfMessage: (behavior?: ScrollBehavior) => void;
 };
 
+const JUMP_BUTTON_CLASS =
+  "pointer-events-auto inline-flex size-8 items-center justify-center rounded-full border border-dls-border bg-dls-surface/95 text-dls-text shadow-(--dls-card-shadow) backdrop-blur-md transition-colors hover:bg-dls-hover focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-dls-border";
+
 const JumpToStartButton = memo(function JumpToStartButton({
   onJumpToStartOfMessage,
 }: JumpToStartButtonProps) {
@@ -27,10 +31,13 @@ const JumpToStartButton = memo(function JumpToStartButton({
   return (
     <button
       type="button"
-      className="rounded-full px-3 py-1.5 text-xs text-dls-text transition-colors hover:bg-dls-hover"
+      className={JUMP_BUTTON_CLASS}
+      aria-label="Jump to start"
+      title="Jump to start"
+      data-testid="jump-to-start"
       onClick={handleClick}
     >
-      Jump to start
+      <ArrowUp aria-hidden="true" className="size-4" />
     </button>
   );
 });
@@ -49,10 +56,13 @@ const JumpToLatestButton = memo(function JumpToLatestButton({
   return (
     <button
       type="button"
-      className="rounded-full px-3 py-1.5 text-xs text-dls-text transition-colors hover:bg-dls-hover"
+      className={JUMP_BUTTON_CLASS}
+      aria-label="Jump to latest"
+      title="Jump to latest"
+      data-testid="jump-to-latest"
       onClick={handleClick}
     >
-      Jump to latest
+      <ArrowDown aria-hidden="true" className="size-4" />
     </button>
   );
 });
@@ -79,15 +89,17 @@ export const SessionScrollOverlay = memo(function SessionScrollOverlay({
   }
 
   return (
-    <div className="pointer-events-none absolute bottom-2 left-1/2 z-30 flex -translate-x-1/2 justify-center">
-      <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-dls-border bg-dls-surface/95 p-1 shadow-(--dls-card-shadow) backdrop-blur-md">
-        {showJumpToStart ? (
-          <JumpToStartButton onJumpToStartOfMessage={onJumpToStartOfMessage} />
-        ) : null}
-        {showJumpToLatest ? (
+    <div
+      className="pointer-events-none absolute inset-y-0 end-0 z-30 flex w-10 flex-col items-center py-3 sm:w-12"
+      data-testid="session-scroll-rail"
+      aria-label="Chat navigation"
+    >
+      {showJumpToStart ? <JumpToStartButton onJumpToStartOfMessage={onJumpToStartOfMessage} /> : null}
+      {showJumpToLatest ? (
+        <div className="mt-auto">
           <JumpToLatestButton onJumpToLatest={onJumpToLatest} />
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 });
