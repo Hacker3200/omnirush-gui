@@ -134,11 +134,18 @@ interface ToastCardProps {
 }
 
 function ToastCard({ id, type, title, description, action, cancel, notification }: ToastCardProps) {
-  const dismiss = (e: React.MouseEvent | React.PointerEvent) => {
+  const [dismissed, setDismissed] = React.useState(false);
+
+  const dismiss = (e: React.SyntheticEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setDismissed(true);
     sonnerToast.dismiss(id);
   };
+
+  if (dismissed) {
+    return null;
+  }
 
   if (notification) {
     return (
@@ -148,11 +155,12 @@ function ToastCard({ id, type, title, description, action, cancel, notification 
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-medium">{title}</p>
             <Button
+              type="button"
               variant="ghost"
               size="icon-sm"
               className="size-6 shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
               onClick={dismiss}
-              onPointerDown={(e) => e.stopPropagation()}
+              onPointerDown={dismiss}
               aria-label="Close notification"
             >
               <XIcon className="size-3.5" />
@@ -171,11 +179,12 @@ function ToastCard({ id, type, title, description, action, cancel, notification 
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm font-medium">{title}</p>
           <Button
+            type="button"
             variant="ghost"
             size="icon-sm"
             className="size-6 shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
             onClick={dismiss}
-            onPointerDown={(e) => e.stopPropagation()}
+            onPointerDown={dismiss}
             aria-label="Close notification"
           >
             <XIcon className="size-3.5" />
@@ -189,6 +198,7 @@ function ToastCard({ id, type, title, description, action, cancel, notification 
                 size="sm"
                 onClick={() => {
                   action.onClick()
+                  setDismissed(true)
                   sonnerToast.dismiss(id)
                 }}
               >
@@ -201,6 +211,7 @@ function ToastCard({ id, type, title, description, action, cancel, notification 
                 variant="outline"
                 onClick={() => {
                   cancel.onClick()
+                  setDismissed(true)
                   sonnerToast.dismiss(id)
                 }}
               >
