@@ -134,15 +134,28 @@ interface ToastCardProps {
 }
 
 function ToastCard({ id, type, title, description, action, cancel, notification }: ToastCardProps) {
+  const dismiss = (e: React.MouseEvent | React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    sonnerToast.dismiss(id);
+  };
+
   if (notification) {
     return (
       <div className={cn("flex w-full gap-3 rounded-2xl border border-border bg-popover/95 backdrop-blur-sm p-4 text-popover-foreground shadow-md md:max-w-sm ring-1 ring-popover-border/20 items-center")}>
         <ToastIcon type={type} size="sm" />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-medium">{title}</p>
-            <Button variant="ghost" size="sm" onClick={() => sonnerToast.dismiss(id)}>
-              <XIcon className="size-4" />
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="size-6 shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
+              onClick={dismiss}
+              onPointerDown={(e) => e.stopPropagation()}
+              aria-label="Close notification"
+            >
+              <XIcon className="size-3.5" />
             </Button>
           </div>
           {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
@@ -155,10 +168,17 @@ function ToastCard({ id, type, title, description, action, cancel, notification 
     <div className={cn("flex w-full items-start gap-3 rounded-2xl border border-border bg-popover/95 backdrop-blur-sm p-4 text-popover-foreground shadow-md md:max-w-sm ring-1 ring-popover-border/20")}>
       <ToastIcon type={type} />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="flex items-center gap-2">
-         <p className="text-sm font-medium">{title}</p>
-         <Button variant="ghost" size="sm" onClick={() => sonnerToast.dismiss(id)}>
-          <XIcon className="size-4" />
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-medium">{title}</p>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="size-6 shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
+            onClick={dismiss}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label="Close notification"
+          >
+            <XIcon className="size-3.5" />
           </Button>
         </div>
         {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
@@ -295,7 +315,7 @@ function showToast(type: ToastType, message: React.ReactNode, options?: ToastOpt
     ),
     {
       id: options?.id,
-      duration: options?.duration,
+      duration: options?.duration ?? (notification ? 3000 : 4000),
       description: undefined,
       action: undefined,
       cancel: undefined,

@@ -97,7 +97,7 @@ function CompactSessionStatus({ checklist, result, serverAvailable }: {
 }) {
   const copy = goodSessionCopy(result);
   if (copy.state === "not-good" || checklist.verdict === "incomplete") {
-    return { label: "Needs attention", state: "warning" as const };
+    return { label: "Session Details: Needs attention", state: "warning" as const };
   }
   if (copy.state === "good" || checklist.verdict === "good") {
     return { label: "Good session", state: "good" as const };
@@ -132,99 +132,124 @@ function GoodSessionDetailsDialog({ checklist, result, serverAvailable, open, on
   const warningChecks = checklist.checks.filter((check) => check.state === "fail" || check.state === "warn");
   const hasWarnings = Boolean(
     warningChecks.length
-      || checklist.message
-      || checklist.reasons.length
-      || checklist.delivery
-      || checklist.dock
-      || copy.state === "not-good",
+    || checklist.message
+    || checklist.reasons.length
+    || checklist.delivery
+    || checklist.dock
+    || copy.state === "not-good",
   );
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      // Ensure the dialog always displays from the very top on open
+      requestAnimationFrame(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = 0;
+        }
+      });
+    }
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-h-[min(80dvh,560px)] sm:max-w-md"
+        className="flex max-h-[85vh] flex-col overflow-hidden resize lg:max-w-4xl min-w-[360px] min-h-[380px] max-w-[95vw]"
         data-testid="good-session-details-dialog"
       >
-        <DialogHeader>
+        <DialogHeader className="shrink-0 pb-1 border-b border-border/40">
           <DialogTitle>Good session details</DialogTitle>
           <DialogDescription>See what this session needs to count as a Good session.</DialogDescription>
         </DialogHeader>
-        <div className="min-h-0 space-y-4 overflow-y-auto pe-1">
-          <section aria-labelledby="good-session-counting-status" data-testid="good-session-counting-status" className="rounded-xl border border-border bg-muted/20 px-3 py-2.5">
-            <div className="flex items-center justify-between gap-3 text-sm">
-              <h3 id="good-session-counting-status" className="font-medium text-foreground">Counting status</h3>
-              <span className="text-end text-muted-foreground">{CountingStatus({ checklist, result, serverAvailable })}</span>
+
+        <div
+          ref={scrollContainerRef}
+          className="min-h-0 flex-1 overflow-y-auto pt-3 pe-2"
+        >
+          {/* Top Counting Status summary */}
+          <section aria-labelledby="good-session-counting-status" data-testid="good-session-counting-status" className="mb-4 rounded-xl border border-border bg-muted/20 px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+              <h3 id="good-session-counting-status" className="font-semibold text-foreground">Counting status</h3>
+              <span className="font-medium text-foreground">{CountingStatus({ checklist, result, serverAvailable })}</span>
             </div>
             <p className="mt-1 text-xs text-muted-foreground" data-testid="good-session-counting-work">
               Counts: {checklist.work.codeFiles} code files · {checklist.work.lines} lines · {checklist.work.testRuns} test runs
             </p>
           </section>
 
-          <section aria-labelledby="good-session-checklist-title" data-testid="good-session-details-checklist">
-            <h3 id="good-session-checklist-title" className="mb-2 text-sm font-medium text-foreground">Checklist</h3>
-            <ul className="space-y-2">
-              {checklist.checks.map((check) => (
-                <li
-                  key={check.id}
-                  data-check={check.id}
-                  data-state={check.state}
-                  className="flex items-start gap-2 rounded-lg border border-border/70 px-2.5 py-2"
-                >
-                  <CheckStateIcon state={check.state} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-xs">
-                      <span className="font-medium text-foreground">{check.label}</span>
-                      <span className="text-muted-foreground">{CHECK_STATE_LABEL[check.state]}</span>
+          {/* 2-Column Horizontal Layout on medium/large screens */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {/* Left Column: Checklist */}
+            <section aria-labelledby="good-session-checklist-title" data-testid="good-session-details-checklist" className="flex flex-col gap-2">
+              <h3 id="good-session-checklist-title" className="text-sm font-semibold text-foreground">Checklist</h3>
+              <ul className="space-y-2">
+                {checklist.checks.map((check) => (
+                  <li
+                    key={check.id}
+                    data-check={check.id}
+                    data-state={check.state}
+                    className="flex items-start gap-2 rounded-lg border border-border/70 bg-card/40 px-3 py-2"
+                  >
+                    <CheckStateIcon state={check.state} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-xs">
+                        <span className="font-medium text-foreground">{check.label}</span>
+                        <span className="text-muted-foreground">{CHECK_STATE_LABEL[check.state]}</span>
+                      </div>
+                      {check.hint ? <p className="mt-0.5 text-xs leading-4 text-muted-foreground">{check.hint}</p> : null}
                     </div>
-                    {check.hint ? <p className="mt-0.5 text-xs leading-4 text-muted-foreground">{check.hint}</p> : null}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section aria-labelledby="good-session-warnings-title" data-testid="good-session-warnings">
-            <h3 id="good-session-warnings-title" className="mb-2 text-sm font-medium text-foreground">Warnings</h3>
-            {hasWarnings ? (
-              <ul className="space-y-1.5 text-xs leading-4 text-amber-11">
-                {warningChecks.map((check) => <li key={`check-${check.id}`}>{check.label}: {check.hint}</li>)}
-                {checklist.message ? <li>{checklist.message}</li> : null}
-                {checklist.reasons.map((reason) => <li key={`reason-${reason}`}>{reason}</li>)}
-                {checklist.delivery ? <li>{checklist.delivery}</li> : null}
-                {checklist.dock ? (
-                  <li className="flex items-start gap-2">
-                    <span className="min-w-0 flex-1">{checklist.dock.message}</span>
-                    {checklist.dock.link ? (
-                      <button
-                        type="button"
-                        className="shrink-0 font-medium underline underline-offset-2"
-                        onClick={() => void openDesktopUrl(checklist.dock?.link ?? "").catch(() => undefined)}
-                      >
-                        Open details
-                      </button>
-                    ) : null}
                   </li>
-                ) : null}
-                {copy.state === "not-good" ? (
-                  <li className="flex items-start gap-2">
-                    <span className="min-w-0 flex-1">{copy.text}</span>
-                    <button
-                      type="button"
-                      data-testid="good-session-rewards-link"
-                      className="shrink-0 font-medium underline underline-offset-2"
-                      onClick={() => void openDesktopUrl(copy.link.url).catch(() => undefined)}
-                    >
-                      {copy.link.label}
-                    </button>
-                  </li>
-                ) : null}
+                ))}
               </ul>
-            ) : (
-              <p className="text-xs text-muted-foreground">No warnings.</p>
-            )}
-          </section>
+            </section>
 
-          <GoodSessionGuide className="rounded-xl border border-border px-3 py-2.5" />
+            {/* Right Column: Warnings & How to make a Good session Guide */}
+            <div className="flex flex-col gap-4">
+              <section aria-labelledby="good-session-warnings-title" data-testid="good-session-warnings" className="rounded-xl border border-border/70 bg-card/30 p-3">
+                <h3 id="good-session-warnings-title" className="mb-2 text-sm font-semibold text-foreground">Warnings</h3>
+                {hasWarnings ? (
+                  <ul className="space-y-1.5 text-xs leading-4 text-amber-11">
+                    {warningChecks.map((check) => <li key={`check-${check.id}`}>{check.label}: {check.hint}</li>)}
+                    {checklist.message ? <li>{checklist.message}</li> : null}
+                    {checklist.reasons.map((reason) => <li key={`reason-${reason}`}>{reason}</li>)}
+                    {checklist.delivery ? <li>{checklist.delivery}</li> : null}
+                    {checklist.dock ? (
+                      <li className="flex items-start gap-2">
+                        <span className="min-w-0 flex-1">{checklist.dock.message}</span>
+                        {checklist.dock.link ? (
+                          <button
+                            type="button"
+                            className="shrink-0 font-medium underline underline-offset-2"
+                            onClick={() => void openDesktopUrl(checklist.dock?.link ?? "").catch(() => undefined)}
+                          >
+                            Open details
+                          </button>
+                        ) : null}
+                      </li>
+                    ) : null}
+                    {copy.state === "not-good" ? (
+                      <li className="flex items-start gap-2">
+                        <span className="min-w-0 flex-1">{copy.text}</span>
+                        <button
+                          type="button"
+                          data-testid="good-session-rewards-link"
+                          className="shrink-0 font-medium underline underline-offset-2"
+                          onClick={() => void openDesktopUrl(copy.link.url).catch(() => undefined)}
+                        >
+                          {copy.link.label}
+                        </button>
+                      </li>
+                    ) : null}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No warnings.</p>
+                )}
+              </section>
+
+              <GoodSessionGuide className="rounded-xl border border-border bg-card/30 p-3" />
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
